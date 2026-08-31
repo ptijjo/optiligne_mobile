@@ -1,0 +1,162 @@
+import type { GuidanceState, StartSession } from '@/features/guidance/types';
+import { boundsFromCoordinates } from '@/map/bounds';
+import { NavArrow } from '@/map/NavArrow';
+import { routeLine } from '@/map/style';
+import { colors } from '@/theme';
+import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
+import { StyleSheet, View } from 'react-native';
+import MapView, { Circle, Marker, Polyline, type Region } from 'react-native-maps';
+
+const METZ = { latitude: 49.119, longitude: 6.177 };
+
+type LatLng = { latitude: number; longitude: number };
+
+type GuidanceMapProps = {
+  session: StartSession;
+  state: GuidanceState;
+  heading: number;
+  coordinate?: [number, number];
+  followUser?: boolean;
+};
+
+function toLatLng(coord: [number, number]): LatLng {
+  return { latitude: coord[1], longitude: coord[0] };
+}
+
+function regionFromBounds(
+  bounds: { ne: [number, number]; sw: [number, number] },
+): Region {
+  const latDelta = Math.max(0.02, (bounds.ne[1] - bounds.sw[1]) * 1.6);
+  const lonDelta = Math.max(0.02, (bounds.ne[0] - bounds.sw[0]) * 1.6);
+  return {
+    latitude: (bounds.ne[1] + bounds.sw[1]) / 2,
+    longitude: (bounds.ne[0] + bounds.sw[0]) / 2,
+    latitudeDelta: latDelta,
+    longitudeDelta: lonDelta,
+  };
+}
+
+export function GuidanceMap({
+  session,
+  state,
+  heading,
+  coordinate,
+  followUser = false,
+}: GuidanceMapProps) {
+  const mapRef = useRef<MapView>(null);
+  const [trackArrow, setTrackArrow] = useState(true);
+  const coords = session.shape?.coordinates ?? [];
+  const stops = useMemo(
+    () => (session.stops ?? []).filter((stop) => Number.isFinite(stop.lat) && Number.isFinite(stop.lon)),
+    [session.stops],
+  );
+  const bounds = boundsFromCoordinates(coords);
+  const arrowLonLat =
+    coordinate ?? coords[0] ?? (stops[0] ? ([stops[0].lon, stops[0].lat] as [number, number]) : null);
+  const arrowAt = arrowLonLat ? toLatLng(arrowLonLat) : METZ;
+
+  const routePoints = useMemo(() => coords.map(toLatLng), [coords]);
+
+  const initialRegion = bounds
+    ? regionFromBounds(bounds)
+    : { ...arrowAt, latitudeDelta: 0.08, longitudeDelta: 0.08 };
+
+  useEffect(() => {
+    if (!bounds || routePoints.length < 2 || followUser) {
+      return;
+    }
+    mapRef.current?.fitToCoordinates(routePoints, {
+      edgePadding: { top: 140, right: 36, bottom: 48, left: 36 },
+      animated: false,
+    });
+  }, [bounds, routePoints, followUser]);
+
+  useEffect(() => {
+    if (!followUser || !coordinate) {
+      return;
+    }
+    const center = toLatLng(coordinate);
+    mapRef.current?.animateToRegion(
+      {
+        ...center,
+        latitudeDelta: 0.012,
+        longitudeDelta: 0.012,
+      },
+      400,
+    );
+  }, [followUser, coordinate]);
+
+  useEffect(() => {
+    setTrackArrow(true);
+    const timer = setTimeout(() => setTrackArrow(false), 800);
+    return () => clearTimeout(timer);
+  }, [state, heading, arrowAt.latitude, arrowAt.longitude]);
+
+  return (
+    <View testID="guidance-map" style={styles.fill}>
+      <MapView
+        ref={mapRef}
+        style={styles.fill}
+        initialRegion={initialRegion}
+        mapType="standard"
+        rotateEnabled={false}
+        pitchEnabled={false}
+        toolbarEnabled={false}
+        showsPointsOfInterest={false}
+        showsBuildings={false}
+        showsTraffic={false}
+        showsIndoors={false}
+      >
+        {routePoints.length >= 2 ? (
+          <Polyline
+            coordinates={routePoints}
+            strokeColor={routeLine.strokeColor}
+            strokeWidth={routeLine.strokeWidth}
+            lineCap="round"
+            lineJoin="round"
+            zIndex={1}
+          />
+        ) : null}
+        {stops.map((stop, index) => {
+          const center = { latitude: stop.lat, longitude: stop.lon };
+          return (
+            <Fragment key={`${stop.name}-${stop.lon}-${stop.lat}-${index}`}>
+              <Circle
+                center={center}
+                radius={28}
+                strokeWidth={3}
+                strokeColor={colors.brand}
+                fillColor={colors.white}
+                zIndex={2}
+              />
+              <Marker
+                coordinate={center}
+                title={stop.name}
+                description="Arrêt"
+                pinColor={colors.brand}
+                zIndex={3}
+                tracksViewChanges={false}
+              />
+            </Fragment>
+          );
+        })}
+        <Marker
+          coordinate={arrowAt}
+          anchor={{ x: 0.5, y: 0.5 }}
+          flat
+          rotation={heading}
+          zIndex={10}
+          tracksViewChanges={trackArrow}
+        >
+          <NavArrow state={state} heading={0} />
+        </Marker>
+      </MapView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  fill: {
+    flex: 1,
+  },
+});
