@@ -4,7 +4,7 @@
     "slug": "optiligne-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/img.png",
     "scheme": "optiligne",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -15,16 +15,14 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0056D6",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/img.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "fr.optiligne.mobile"
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/img.png"
     },
     "plugins": [
       "expo-router",
@@ -33,7 +31,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0056D6",
-          "image": "./assets/splash-icon.png",
+          "image": "./assets/img.png",
           "imageWidth": 200
         }
       ],

@@ -1,6 +1,6 @@
 import type { GuidanceState, StartSession } from '@/features/guidance/types';
 import { boundsFromCoordinates } from '@/map/bounds';
-import { NavArrow } from '@/map/NavArrow';
+import { MinibusMarker, busMarkerRotation } from '@/map/MinibusMarker';
 import { routeLine } from '@/map/style';
 import { colors } from '@/theme';
 import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
@@ -44,7 +44,7 @@ export function GuidanceMap({
   followUser = false,
 }: GuidanceMapProps) {
   const mapRef = useRef<MapView>(null);
-  const [trackArrow, setTrackArrow] = useState(true);
+  const [trackBus, setTrackBus] = useState(true);
   const coords = session.shape?.coordinates ?? [];
   const stops = useMemo(
     () => (session.stops ?? []).filter((stop) => Number.isFinite(stop.lat) && Number.isFinite(stop.lon)),
@@ -87,8 +87,8 @@ export function GuidanceMap({
   }, [followUser, coordinate]);
 
   useEffect(() => {
-    setTrackArrow(true);
-    const timer = setTimeout(() => setTrackArrow(false), 800);
+    setTrackBus(true);
+    const timer = setTimeout(() => setTrackBus(false), 400);
     return () => clearTimeout(timer);
   }, [state, heading, arrowAt.latitude, arrowAt.longitude]);
 
@@ -144,11 +144,11 @@ export function GuidanceMap({
           coordinate={arrowAt}
           anchor={{ x: 0.5, y: 0.5 }}
           flat
-          rotation={heading}
+          rotation={busMarkerRotation(heading)}
           zIndex={10}
-          tracksViewChanges={trackArrow}
+          tracksViewChanges={trackBus}
         >
-          <NavArrow state={state} heading={0} />
+          <MinibusMarker />
         </Marker>
       </MapView>
     </View>

@@ -52,6 +52,24 @@ jest.mock('expo-location', () => ({
   watchPositionAsync: jest.fn(async () => ({ remove: jest.fn() })),
 }));
 
+jest.mock('react-native-svg', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const Mock = (props: { children?: React.ReactNode; testID?: string }) =>
+    React.createElement(View, { testID: props.testID ?? 'svg-mock' }, props.children);
+  return {
+    __esModule: true,
+    default: Mock,
+    Svg: Mock,
+    Circle: Mock,
+    Ellipse: Mock,
+    Rect: Mock,
+    Path: Mock,
+    Line: Mock,
+    G: Mock,
+  };
+});
+
 jest.mock('react-native-maps', () => {
   const React = require('react');
   const { View } = require('react-native');

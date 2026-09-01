@@ -6,7 +6,7 @@ import { serviceDate, shiftServiceDate } from '@/lib/service-date';
 import { API, http, jsonError, jsonOk } from '@/test/msw/http';
 import { renderWithProviders } from '@/test/render';
 import { server } from '@/test/msw/server';
-import { fireEvent } from '@testing-library/react-native';
+import { fireEvent, waitFor } from '@testing-library/react-native';
 
 const schoolA = {
   id: '1006430',
@@ -31,7 +31,7 @@ describe('écrans catalogue', () => {
     expect(screen.queryByText('99XXX00')).toBeNull();
   });
 
-  it('actualise le catalogue au tap sur Actualiser', async () => {
+  it('actualise le catalogue au pull-to-refresh', async () => {
     let version = 1;
     server.use(
       http.get(`${API}/catalog/routes`, () =>
@@ -47,9 +47,54 @@ describe('écrans catalogue', () => {
     expect(await screen.findByText('57ECR00')).toBeTruthy();
 
     version = 2;
-    fireEvent.press(screen.getByLabelText('Actualiser'));
-    expect(await screen.findByText('57NEW00')).toBeTruthy();
+    const list = screen.getByTestId('routes-list');
+    list.props.refreshControl.props.onRefresh();
+    await waitFor(() => expect(screen.getByText('57NEW00')).toBeTruthy());
     expect(screen.getByText('NOUVELLE LIGNE')).toBeTruthy();
+  });
+
+  it('filtre les lignes via la barre de recherche', async () => {
+    server.use(
+      http.get(`${API}/catalog/routes`, () =>
+        jsonOk([
+          schoolA,
+          {
+            id: '1006275',
+            shortName: '57R004',
+            longName: 'CREUTZWALD / METZ',
+            routeType: 204,
+          },
+        ]),
+      ),
+    );
+
+    const screen = renderWithProviders(<RoutesScreen />);
+    expect(await screen.findByText('57ECR00')).toBeTruthy();
+    expect(screen.getByText('57R004')).toBeTruthy();
+
+    fireEvent.changeText(screen.getByLabelText('Rechercher une ligne'), 'metz');
+    expect(screen.getByText('57R004')).toBeTruthy();
+    expect(screen.queryByText('57ECR00')).toBeNull();
+  });
+
+  it('paginate les lignes par pages de dix', async () => {
+    const many = Array.from({ length: 12 }, (_, index) => ({
+      id: String(index + 1),
+      shortName: `57E${String(index).padStart(2, '0')}`,
+      longName: `LIGNE ${index}`,
+      routeType: 712,
+    }));
+    server.use(http.get(`${API}/catalog/routes`, () => jsonOk(many)));
+
+    const screen = renderWithProviders(<RoutesScreen />);
+    expect(await screen.findByText('57E00')).toBeTruthy();
+    expect(screen.getByText('57E09')).toBeTruthy();
+    expect(screen.queryByText('57E10')).toBeNull();
+    expect(screen.getByText('Page 1/2 · 12 lignes')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Page suivante'));
+    expect(await screen.findByText('57E10')).toBeTruthy();
+    expect(screen.getByText('Page 2/2 · 12 lignes')).toBeTruthy();
   });
 
   it('navigue vers les courses au tap sur une ligne', async () => {
