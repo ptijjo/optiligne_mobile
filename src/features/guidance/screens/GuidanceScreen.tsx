@@ -48,6 +48,7 @@ export function GuidanceScreen() {
           heading={gps?.heading ?? 0}
           coordinate={coordinate}
           followUser={Boolean(gps)}
+          nextStop={guidance?.next_stop}
         />
       ) : (
         <View testID="guidance-map" style={styles.fill}>

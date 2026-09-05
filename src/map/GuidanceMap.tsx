@@ -1,11 +1,11 @@
 import type { GuidanceState, StartSession } from '@/features/guidance/types';
 import { boundsFromCoordinates } from '@/map/bounds';
 import { MinibusMarker, busMarkerRotation } from '@/map/MinibusMarker';
+import { StopScheduleMarker } from '@/map/StopScheduleMarker';
 import { routeLine } from '@/map/style';
-import { colors } from '@/theme';
 import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { Circle, Marker, Polyline, type Region } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 
 const METZ = { latitude: 49.119, longitude: 6.177 };
 
@@ -17,6 +17,7 @@ type GuidanceMapProps = {
   heading: number;
   coordinate?: [number, number];
   followUser?: boolean;
+  nextStop?: string;
 };
 
 function toLatLng(coord: [number, number]): LatLng {
@@ -42,10 +43,13 @@ export function GuidanceMap({
   heading,
   coordinate,
   followUser = false,
+  nextStop = '',
 }: GuidanceMapProps) {
   const mapRef = useRef<MapView>(null);
   const [trackBus, setTrackBus] = useState(true);
-  const coords = session.shape?.coordinates ?? [];
+  const coords = (session.shape?.coordinates ?? []).filter(
+    (c) => Number.isFinite(c[0]) && Number.isFinite(c[1]),
+  );
   const stops = useMemo(
     () => (session.stops ?? []).filter((stop) => Number.isFinite(stop.lat) && Number.isFinite(stop.lon)),
     [session.stops],
@@ -90,13 +94,14 @@ export function GuidanceMap({
     setTrackBus(true);
     const timer = setTimeout(() => setTrackBus(false), 400);
     return () => clearTimeout(timer);
-  }, [state, heading, arrowAt.latitude, arrowAt.longitude]);
+  }, [state, heading, arrowAt.latitude, arrowAt.longitude, nextStop]);
 
   return (
     <View testID="guidance-map" style={styles.fill}>
       <MapView
         ref={mapRef}
         style={styles.fill}
+        provider={PROVIDER_GOOGLE}
         initialRegion={initialRegion}
         mapType="standard"
         rotateEnabled={false}
@@ -119,24 +124,21 @@ export function GuidanceMap({
         ) : null}
         {stops.map((stop, index) => {
           const center = { latitude: stop.lat, longitude: stop.lon };
+          const isNext = Boolean(nextStop) && stop.name === nextStop;
           return (
-            <Fragment key={`${stop.name}-${stop.lon}-${stop.lat}-${index}`}>
-              <Circle
-                center={center}
-                radius={28}
-                strokeWidth={3}
-                strokeColor={colors.brand}
-                fillColor={colors.white}
-                zIndex={2}
-              />
+            <Fragment key={`${stop.sequence}-${stop.name}-${stop.lon}-${stop.lat}-${index}`}>
               <Marker
                 coordinate={center}
-                title={stop.name}
-                description="Arrêt"
-                pinColor={colors.brand}
-                zIndex={3}
+                anchor={{ x: 0.5, y: 0.5 }}
+                zIndex={isNext ? 5 : 3}
                 tracksViewChanges={false}
-              />
+              >
+                <StopScheduleMarker
+                  name={stop.name}
+                  arrivalSec={stop.arrivalSec}
+                  isNext={isNext}
+                />
+              </Marker>
             </Fragment>
           );
         })}

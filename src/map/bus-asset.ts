@@ -1,4 +1,6 @@
 /** Asset bus OptiLigne (marqueur carte + icône app). */
 export const busMarkerImage = require('../../assets/img.png');
 
-export const BUS_MARKER_SIZE = 48;
+/** Taille affichée sur la carte (px). Ne pas utiliser `Marker.image` : l’asset icône serait en taille native. */
+export const BUS_MARKER_SIZE = 36;
+

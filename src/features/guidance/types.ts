@@ -13,6 +13,8 @@ export const mapStopSchema = z.object({
   name: z.string(),
   lon: z.number(),
   lat: z.number(),
+  arrivalSec: z.number().int().nonnegative().optional().default(0),
+  sequence: z.number().int().nonnegative().optional().default(0),
 });
 
 export const startSessionSchema = z.object({

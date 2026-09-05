@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "OptiLigne",
-    "slug": "optiligne-mobile",
-    "version": "1.0.0",
+    "slug": "optiligne",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/img.png",
     "scheme": "optiligne",
@@ -10,15 +10,20 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "fr.optiligne.mobile"
+      "bundleIdentifier": "fr.cellulenoire.optiligne"
     },
     "android": {
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#0056D6",
         "foregroundImage": "./assets/img.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "fr.optiligne.mobile"
+      "package": "fr.cellulenoire.optiligne",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "single",
@@ -44,6 +49,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6d7266b6-3fda-4484-84c7-34ca590afa54"
+      }
+    },
+    "owner": "ptijjo"
   }
 }

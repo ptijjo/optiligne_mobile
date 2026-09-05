@@ -52,6 +52,11 @@ jest.mock('expo-location', () => ({
   watchPositionAsync: jest.fn(async () => ({ remove: jest.fn() })),
 }));
 
+jest.mock('expo-speech', () => ({
+  speak: jest.fn(),
+  stop: jest.fn(),
+}));
+
 jest.mock('react-native-svg', () => {
   const React = require('react');
   const { View } = require('react-native');
@@ -82,5 +87,6 @@ jest.mock('react-native-maps', () => {
     Polyline: Mock,
     Circle: Mock,
     PROVIDER_DEFAULT: 'default',
+    PROVIDER_GOOGLE: 'google',
   };
 });

@@ -4,13 +4,26 @@ import { resetConfig } from '@/config';
 import { API, http, jsonError, jsonOk } from '@/test/msw/http';
 import { renderWithProviders } from '@/test/render';
 import { server } from '@/test/msw/server';
+import { act, waitFor } from '@testing-library/react-native';
+import type { GuidanceMessage } from '@/ws';
+
+let onGuidance: ((msg: GuidanceMessage) => void) | undefined;
 
 jest.mock('@/ws', () => ({
-  connectGuidanceWs: () => ({ sendPosition: jest.fn(), close: jest.fn() }),
+  connectGuidanceWs: (_sessionId: string, handlers: { onGuidance: (msg: GuidanceMessage) => void }) => {
+    onGuidance = handlers.onGuidance;
+    return { sendPosition: jest.fn(), close: jest.fn() };
+  },
 }));
 
 jest.mock('@/features/guidance/location', () => ({
   startGuidanceGps: jest.fn(async () => ({ granted: true, stop: jest.fn() })),
+}));
+
+const mockSpeakAlert = jest.fn();
+jest.mock('@/features/guidance/speech', () => ({
+  speakAlert: (...args: unknown[]) => mockSpeakAlert(...args),
+  stopSpeech: jest.fn(),
 }));
 
 const sessionPayload = {
@@ -23,10 +36,18 @@ const sessionPayload = {
       [6.19, 49.13],
     ],
   },
-  stops: [{ name: 'Forbach', lon: 6.17, lat: 49.11 }],
+  stops: [
+    { name: 'Forbach', lon: 6.17, lat: 49.11, arrivalSec: 26100, sequence: 1 },
+    { name: 'Stiring', lon: 6.19, lat: 49.13, arrivalSec: 27000, sequence: 2 },
+  ],
 };
 
 describe('guidance — démarrage session', () => {
+  beforeEach(() => {
+    onGuidance = undefined;
+    mockSpeakAlert.mockClear();
+  });
+
   it('POST /guidance/sessions avec périmètre, sans Authorization', async () => {
     server.use(
       http.post(`${API}/guidance/sessions`, async ({ request }) => {
@@ -46,6 +67,16 @@ describe('guidance — démarrage session', () => {
       sessionId: 'sess_1',
       tripId: 'T1',
       stops: [],
+    });
+  });
+
+  it('parse les horaires d’arrêts de la session', async () => {
+    server.use(http.post(`${API}/guidance/sessions`, () => jsonOk(sessionPayload)));
+    await expect(startGuidanceSession('T1', '2026-08-31')).resolves.toMatchObject({
+      stops: [
+        { name: 'Forbach', arrivalSec: 26100, sequence: 1 },
+        { name: 'Stiring', arrivalSec: 27000, sequence: 2 },
+      ],
     });
   });
 
@@ -95,5 +126,71 @@ describe('guidance — démarrage session', () => {
     expect(await screen.findByText('FORBACH')).toBeTruthy();
     expect(screen.getByTestId('guidance-map')).toBeTruthy();
     expect(screen.getByText('En attente de position GPS')).toBeTruthy();
+    expect(await screen.findByText('07:15')).toBeTruthy();
+  });
+
+  it('bandeau : conseil régulation depuis delay_s API', async () => {
+    (global as { __routeParams?: Record<string, string> }).__routeParams = {
+      tripId: 'T1',
+      date: '2026-08-31',
+      headsign: 'Forbach',
+    };
+    server.use(http.post(`${API}/guidance/sessions`, () => jsonOk(sessionPayload)));
+
+    const screen = renderWithProviders(<GuidanceScreen />);
+    await screen.findByText('FORBACH');
+    await waitFor(() => expect(onGuidance).toBeDefined());
+
+    act(() => {
+      onGuidance?.({
+        type: 'guidance',
+        frac: 0.2,
+        offset_m: 5,
+        next_stop: 'Stiring',
+        delay_s: -180,
+        state: 'on_route',
+      });
+    });
+
+    expect(
+      await screen.findByText(/Stiring · En avance 3 min — lever le pied/),
+    ).toBeTruthy();
+  });
+
+  it('alerte vocale hors tracé (sans flood)', async () => {
+    (global as { __routeParams?: Record<string, string> }).__routeParams = {
+      tripId: 'T1',
+      date: '2026-08-31',
+      headsign: 'Forbach',
+    };
+    server.use(http.post(`${API}/guidance/sessions`, () => jsonOk(sessionPayload)));
+
+    renderWithProviders(<GuidanceScreen />);
+    await waitFor(() => expect(onGuidance).toBeDefined());
+
+    act(() => {
+      onGuidance?.({
+        type: 'guidance',
+        frac: 0.2,
+        offset_m: 120,
+        next_stop: 'Stiring',
+        delay_s: 0,
+        state: 'off_route',
+      });
+    });
+    expect(mockSpeakAlert).toHaveBeenCalledWith('Attention, hors tracé.');
+
+    mockSpeakAlert.mockClear();
+    act(() => {
+      onGuidance?.({
+        type: 'guidance',
+        frac: 0.21,
+        offset_m: 130,
+        next_stop: 'Stiring',
+        delay_s: 0,
+        state: 'off_route',
+      });
+    });
+    expect(mockSpeakAlert).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,11 @@
 import { startGuidanceSession } from '@/features/guidance/api';
 import { startGuidanceGps, type GpsFix } from '@/features/guidance/location';
+import { speakAlert, stopSpeech } from '@/features/guidance/speech';
+import {
+  nextVoiceAlert,
+  shouldSpeak,
+  type VoiceAlertMemory,
+} from '@/features/guidance/voice-alerts';
 import { connectGuidanceWs, type GuidanceMessage, type GuidanceSocket } from '@/ws';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
@@ -18,6 +24,7 @@ export function useGuidanceLive(tripId: string | undefined, date: string | undef
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsError, setGpsError] = useState('');
   const socketRef = useRef<GuidanceSocket | null>(null);
+  const voiceMemoryRef = useRef<VoiceAlertMemory>({ lastSpokenAt: 0 });
 
   useEffect(() => {
     if (!tripId || !date) {
@@ -38,7 +45,25 @@ export function useGuidanceLive(tripId: string | undefined, date: string | undef
     }
     // 2. Upgrade WS sans token.
     socketRef.current?.close();
-    socketRef.current = connectGuidanceWs(sessionId, { onGuidance: setGuidance });
+    voiceMemoryRef.current = { lastSpokenAt: 0 };
+    socketRef.current = connectGuidanceWs(sessionId, {
+      onGuidance: (msg) => {
+        setGuidance(msg);
+        // 4. Alertes vocales critiques (anti-spam) — source WS uniquement.
+        const result = nextVoiceAlert({
+          state: msg.state,
+          delayS: msg.delay_s,
+          now: Date.now(),
+          memory: voiceMemoryRef.current,
+        });
+        if (result) {
+          voiceMemoryRef.current = result.memory;
+          if (shouldSpeak(result)) {
+            speakAlert(result.text);
+          }
+        }
+      },
+    });
 
     // 3. GPS → messages position.
     let stopGps = () => undefined;
@@ -67,6 +92,7 @@ export function useGuidanceLive(tripId: string | undefined, date: string | undef
     return () => {
       cancelled = true;
       stopGps();
+      stopSpeech();
       socketRef.current?.close();
       socketRef.current = null;
     };

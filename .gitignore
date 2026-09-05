@@ -32,6 +32,7 @@ Thumbs.db
 # local env files
 .env
 .env*.local
+.env.production
 
 # typescript
 *.tsbuildinfo
@@ -39,6 +40,12 @@ Thumbs.db
 # generated native folders
 /ios
 /android
+
+# local release artifacts (AAB)
+/release/
+
+# Android upload keystore (Google Play)
+/android-signing/
 
 # coverage
 coverage/
