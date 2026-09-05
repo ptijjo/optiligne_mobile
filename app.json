@@ -2,7 +2,7 @@
   "expo": {
     "name": "OptiLigne",
     "slug": "optiligne",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/img.png",
     "scheme": "optiligne",
@@ -13,7 +13,7 @@
       "bundleIdentifier": "fr.cellulenoire.optiligne"
     },
     "android": {
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#0056D6",
         "foregroundImage": "./assets/img.png"

@@ -7,13 +7,26 @@ const ROUTE_TYPE_SCHOOL_PUBLIC = 713;
 const ROUTE_TYPE_SCHOOL_BUS = 712;
 
 export function routeKind(route: Route): Exclude<RouteKind, 'all'> {
-  if (route.routeType === ROUTE_TYPE_COACH || /^57R/i.test(route.shortName)) {
+  // Priorité au route_type GTFS (corrigé côté admin) — le préfixe 57R/57S/57E
+  // ne sert que de repli si le type est inconnu / absent.
+  switch (route.routeType) {
+    case ROUTE_TYPE_COACH:
+    case 3:
+      return 'reguliere';
+    case ROUTE_TYPE_SCHOOL_BUS:
+      return 'scolaire';
+    case ROUTE_TYPE_SCHOOL_PUBLIC:
+      return 'associee';
+    default:
+      break;
+  }
+  if (/^57R/i.test(route.shortName)) {
     return 'reguliere';
   }
-  if (route.routeType === ROUTE_TYPE_SCHOOL_PUBLIC || /^57S/i.test(route.shortName)) {
+  if (/^57S/i.test(route.shortName)) {
     return 'associee';
   }
-  if (route.routeType === ROUTE_TYPE_SCHOOL_BUS || /^57E/i.test(route.shortName)) {
+  if (/^57E/i.test(route.shortName)) {
     return 'scolaire';
   }
   return 'scolaire';

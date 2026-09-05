@@ -45,7 +45,7 @@ describe('routeKind', () => {
     expect(filterRoutes(all, 'scolaire').map((r) => r.shortName)).toEqual(['57ECR00']);
   });
 
-  it('classe un type inconnu en scolaire', () => {
+  it('classe le type urbain 3 en régulière', () => {
     expect(
       routeKind({
         id: 'x',
@@ -53,7 +53,26 @@ describe('routeKind', () => {
         longName: 'Urbain',
         routeType: 3,
       }),
+    ).toBe('reguliere');
+  });
+
+  it('priorise routeType sur le préfixe du shortName (correction admin)', () => {
+    expect(
+      routeKind({
+        id: '1',
+        shortName: '57SAV34',
+        longName: 'Test',
+        routeType: 712,
+      }),
     ).toBe('scolaire');
+    expect(
+      routeKind({
+        id: '2',
+        shortName: '57ECR00',
+        longName: 'Test',
+        routeType: 713,
+      }),
+    ).toBe('associee');
   });
 
   it('messages vides par groupe', () => {
