@@ -46,6 +46,9 @@ describe('guidance — démarrage session', () => {
   beforeEach(() => {
     onGuidance = undefined;
     mockSpeakAlert.mockClear();
+    server.use(
+      http.delete(`${API}/guidance/sessions/:id`, () => jsonOk({ ended: true })),
+    );
   });
 
   it('POST /guidance/sessions avec périmètre, sans Authorization', async () => {
@@ -57,7 +60,7 @@ describe('guidance — démarrage session', () => {
           tripId: 'T1',
           date: '2026-08-31',
           operatorCode: 'transavold',
-          depotCode: 'fluo57',
+          depotCode: 'rge',
         });
         return jsonOk({ sessionId: 'sess_1', tripId: 'T1' });
       }),
@@ -120,13 +123,23 @@ describe('guidance — démarrage session', () => {
       date: '2026-08-31',
       headsign: 'Forbach',
     };
-    server.use(http.post(`${API}/guidance/sessions`, () => jsonOk(sessionPayload)));
+    let ended = false;
+    server.use(
+      http.post(`${API}/guidance/sessions`, () => jsonOk(sessionPayload)),
+      http.delete(`${API}/guidance/sessions/:id`, () => {
+        ended = true;
+        return jsonOk({ ended: true });
+      }),
+    );
 
     const screen = renderWithProviders(<GuidanceScreen />);
     expect(await screen.findByText('FORBACH')).toBeTruthy();
     expect(screen.getByTestId('guidance-map')).toBeTruthy();
     expect(screen.getByText('En attente de position GPS')).toBeTruthy();
     expect(await screen.findByText('07:15')).toBeTruthy();
+
+    screen.unmount();
+    await waitFor(() => expect(ended).toBe(true));
   });
 
   it('bandeau : conseil régulation depuis delay_s API', async () => {
@@ -148,12 +161,13 @@ describe('guidance — démarrage session', () => {
         offset_m: 5,
         next_stop: 'Stiring',
         delay_s: -180,
+        travel_s: 12 * 60,
         state: 'on_route',
       });
     });
 
     expect(
-      await screen.findByText(/Stiring · En avance 3 min — lever le pied/),
+      await screen.findByText(/Stiring · ETA 12 min · En avance 3 min — lever le pied/),
     ).toBeTruthy();
   });
 
@@ -175,6 +189,7 @@ describe('guidance — démarrage session', () => {
         offset_m: 120,
         next_stop: 'Stiring',
         delay_s: 0,
+        travel_s: 600,
         state: 'off_route',
       });
     });
@@ -188,6 +203,7 @@ describe('guidance — démarrage session', () => {
         offset_m: 130,
         next_stop: 'Stiring',
         delay_s: 0,
+        travel_s: 590,
         state: 'off_route',
       });
     });

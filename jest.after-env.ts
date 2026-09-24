@@ -1,4 +1,5 @@
 import { resetConfig } from '@/config';
+import { resetSelectedSector } from '@/features/catalog/sector';
 import { server } from '@/test/msw/server';
 
 beforeAll(() => {
@@ -8,6 +9,7 @@ beforeAll(() => {
 afterEach(() => {
   server.resetHandlers();
   resetConfig();
+  resetSelectedSector();
   const router = require('expo-router') as {
     __router: { push: jest.Mock; replace: jest.Mock; back: jest.Mock };
   };

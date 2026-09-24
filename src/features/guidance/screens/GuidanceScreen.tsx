@@ -1,6 +1,7 @@
 import { isApiError } from '@/api/errors';
 import { useGuidanceLive } from '@/features/guidance/hooks';
 import { delayLabel } from '@/lib/delay-label';
+import { guidanceBannerLabel } from '@/lib/travel-label';
 import { GuidanceMap } from '@/map/GuidanceMap';
 import { colors, fonts, spacing, tapMin } from '@/theme';
 import { AppText } from '@/ui/AppText';
@@ -23,7 +24,7 @@ export function GuidanceScreen() {
   const { start, guidance, gps, gpsError } = useGuidanceLive(tripId, date);
   const state = guidance?.state ?? 'on_route';
   const bannerLabel = guidance
-    ? [guidance.next_stop, delayLabel(guidance.delay_s)].filter(Boolean).join(' · ')
+    ? guidanceBannerLabel(guidance.next_stop, guidance.delay_s, guidance.travel_s, delayLabel)
     : gps
       ? 'Position reçue — calcul…'
       : 'En attente de position GPS';

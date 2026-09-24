@@ -2,9 +2,9 @@
   "expo": {
     "name": "OptiLigne",
     "slug": "optiligne",
-    "version": "1.0.3",
+    "version": "1.0.7",
     "orientation": "portrait",
-    "icon": "./assets/img.png",
+    "icon": "./assets/icon.png",
     "scheme": "optiligne",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -13,10 +13,10 @@
       "bundleIdentifier": "fr.cellulenoire.optiligne"
     },
     "android": {
-      "versionCode": 4,
+      "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#0056D6",
-        "foregroundImage": "./assets/img.png"
+        "foregroundImage": "./assets/icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "fr.cellulenoire.optiligne",
@@ -27,7 +27,7 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/img.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router",
@@ -36,8 +36,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0056D6",
-          "image": "./assets/img.png",
-          "imageWidth": 200
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 100
         }
       ],
       [

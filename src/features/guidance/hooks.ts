@@ -1,4 +1,4 @@
-import { startGuidanceSession } from '@/features/guidance/api';
+import { endGuidanceSession, startGuidanceSession } from '@/features/guidance/api';
 import { startGuidanceGps, type GpsFix } from '@/features/guidance/location';
 import { speakAlert, stopSpeech } from '@/features/guidance/speech';
 import {
@@ -25,24 +25,45 @@ export function useGuidanceLive(tripId: string | undefined, date: string | undef
   const [gpsError, setGpsError] = useState('');
   const socketRef = useRef<GuidanceSocket | null>(null);
   const voiceMemoryRef = useRef<VoiceAlertMemory>({ lastSpokenAt: 0 });
+  const sessionIdRef = useRef<string | null>(null);
+  const liveRef = useRef(false);
 
   useEffect(() => {
     if (!tripId || !date) {
       return;
     }
+    liveRef.current = true;
     // 1. Créer la session HTTP.
-    mutate({ tripId, date });
+    mutate(
+      { tripId, date },
+      {
+        onSuccess: (data) => {
+          if (!liveRef.current) {
+            void endGuidanceSession(data.sessionId);
+            return;
+          }
+          sessionIdRef.current = data.sessionId;
+        },
+      },
+    );
     return () => {
+      liveRef.current = false;
       socketRef.current?.close();
       socketRef.current = null;
+      const sid = sessionIdRef.current;
+      sessionIdRef.current = null;
+      if (sid) {
+        void endGuidanceSession(sid);
+      }
     };
   }, [tripId, date, mutate]);
 
   useEffect(() => {
     const sessionId = start.data?.sessionId;
-    if (!sessionId) {
+    if (!sessionId || !liveRef.current) {
       return;
     }
+    sessionIdRef.current = sessionId;
     // 2. Upgrade WS sans token.
     socketRef.current?.close();
     voiceMemoryRef.current = { lastSpokenAt: 0 };

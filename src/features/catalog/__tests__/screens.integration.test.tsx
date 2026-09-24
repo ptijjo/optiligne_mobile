@@ -6,6 +6,7 @@ import { serviceDate, shiftServiceDate } from '@/lib/service-date';
 import { API, http, jsonError, jsonOk } from '@/test/msw/http';
 import { renderWithProviders } from '@/test/render';
 import { server } from '@/test/msw/server';
+import { resetSelectedSector } from '@/features/catalog/sector';
 import { fireEvent, waitFor } from '@testing-library/react-native';
 
 const schoolA = {
@@ -17,6 +18,7 @@ const schoolA = {
 
 describe('écrans catalogue', () => {
   beforeEach(() => {
+    resetSelectedSector();
     server.use(http.get(`${API}/health`, () => jsonOk({ status: 'ok' })));
   });
 
@@ -29,6 +31,24 @@ describe('écrans catalogue', () => {
     expect(screen.getByText('Scolaire')).toBeTruthy();
     expect(screen.getByText('1 ligne')).toBeTruthy();
     expect(screen.queryByText('99XXX00')).toBeNull();
+  });
+
+  it('filtre le catalogue par réseau RGE / CASAS / CASC / Forbus', async () => {
+    server.use(
+      http.get(`${API}/catalog/routes`, ({ request }) => {
+        const sector = new URL(request.url).searchParams.get('depot_code');
+        if (sector === 'casas') {
+          return jsonOk([{ id: 'L1', shortName: 'L1', longName: 'CASAS urbain', routeType: 3 }]);
+        }
+        return jsonOk([schoolA]);
+      }),
+    );
+
+    const screen = renderWithProviders(<RoutesScreen />);
+    expect(await screen.findByText('57ECR00')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('CASAS'));
+    expect(await screen.findByText('L1')).toBeTruthy();
+    expect(screen.queryByText('57ECR00')).toBeNull();
   });
 
   it('actualise le catalogue au pull-to-refresh', async () => {

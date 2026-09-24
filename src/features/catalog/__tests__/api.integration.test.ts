@@ -23,7 +23,7 @@ describe('catalogue API — contrat optiligne_back', () => {
       http.get(`${API}/catalog/routes`, ({ request }) => {
         const url = new URL(request.url);
         expect(url.searchParams.get('operator_code')).toBe('transavold');
-        expect(url.searchParams.get('depot_code')).toBe('fluo57');
+        expect(url.searchParams.get('depot_code')).toBe('rge');
         expect(request.headers.get('Authorization')).toBeNull();
         return jsonOk([schoolA]);
       }),
@@ -36,7 +36,7 @@ describe('catalogue API — contrat optiligne_back', () => {
     server.use(
       http.get(`${API}/catalog/routes`, ({ request }) => {
         const depot = new URL(request.url).searchParams.get('depot_code');
-        if (depot === 'fluo57') {
+        if (depot === 'rge') {
           return jsonOk([schoolA]);
         }
         return jsonOk([schoolB]);
@@ -79,7 +79,7 @@ describe('catalogue API — contrat optiligne_back', () => {
         const url = new URL(request.url);
         expect(url.searchParams.get('date')).toBe('2026-08-30');
         expect(url.searchParams.get('operator_code')).toBe('transavold');
-        expect(url.searchParams.get('depot_code')).toBe('fluo57');
+        expect(url.searchParams.get('depot_code')).toBe('rge');
         return jsonOk([{ id: 'T1', headsign: 'CREHANGE', routeId: '1006430', departureSec: 26100 }]);
       }),
     );
@@ -114,7 +114,7 @@ describe('catalogue API — contrat optiligne_back', () => {
       http.get(`${API}/catalog/trips/T1/stops`, ({ request }) => {
         const url = new URL(request.url);
         expect(url.searchParams.get('operator_code')).toBe('transavold');
-        expect(url.searchParams.get('depot_code')).toBe('fluo57');
+        expect(url.searchParams.get('depot_code')).toBe('rge');
         expect(request.headers.get('Authorization')).toBeNull();
         return jsonOk([
           {

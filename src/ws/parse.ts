@@ -7,6 +7,7 @@ export const guidanceMessageSchema = z.object({
   offset_m: z.number(),
   next_stop: z.unknown(),
   delay_s: z.number(),
+  travel_s: z.number().optional().default(0),
   state: guidanceStateSchema,
 });
 
@@ -16,6 +17,7 @@ export type GuidanceMessage = {
   offset_m: number;
   next_stop: string;
   delay_s: number;
+  travel_s: number;
   state: GuidanceState;
 };
 
@@ -33,6 +35,7 @@ export function parseGuidanceMessage(raw: string): GuidanceMessage | null {
       offset_m: parsed.data.offset_m,
       next_stop: typeof next === 'string' ? next : '',
       delay_s: parsed.data.delay_s,
+      travel_s: parsed.data.travel_s,
       state: parsed.data.state,
     };
   } catch {

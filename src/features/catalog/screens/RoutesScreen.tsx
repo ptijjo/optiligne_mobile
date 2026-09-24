@@ -3,6 +3,7 @@ import { KindFilter } from '@/features/catalog/components/KindFilter';
 import { RoutePagination } from '@/features/catalog/components/RoutePagination';
 import { RouteRow } from '@/features/catalog/components/RouteRow';
 import { RouteSearchBar } from '@/features/catalog/components/RouteSearchBar';
+import { SectorFilter } from '@/features/catalog/components/SectorFilter';
 import { useRefreshCatalog, useRoutes } from '@/features/catalog/hooks';
 import {
   emptyKindMessage,
@@ -10,6 +11,11 @@ import {
   lineCountLabel,
   type RouteKind,
 } from '@/features/catalog/route-kind';
+import {
+  getSelectedSector,
+  setSelectedSector,
+  type SectorCode,
+} from '@/features/catalog/sector';
 import {
   emptySearchMessage,
   paginateRoutes,
@@ -34,6 +40,7 @@ export function RoutesScreen() {
   const { refresh, isRefreshing } = useRefreshCatalog();
   const router = useRouter();
   const [kind, setKind] = useState<RouteKind>('all');
+  const [sector, setSector] = useState<SectorCode>(() => getSelectedSector());
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
 
@@ -44,6 +51,11 @@ export function RoutesScreen() {
     [router],
   );
 
+  const onSector = useCallback((next: SectorCode) => {
+    setSelectedSector(next);
+    setSector(next);
+  }, []);
+
   const filtered = useMemo(
     () => searchRoutes(filterRoutes(routes.data ?? [], kind), query),
     [routes.data, kind, query],
@@ -53,7 +65,7 @@ export function RoutesScreen() {
 
   useEffect(() => {
     setPage(1);
-  }, [kind, query]);
+  }, [kind, query, sector]);
 
   const errorMessage = isApiError(routes.error)
     ? routes.error.message
@@ -67,6 +79,7 @@ export function RoutesScreen() {
   return (
     <Screen variant="hero" title="OptiLigne" subtitle="Choisissez votre ligne">
       <RouteSearchBar value={query} onChangeText={setQuery} />
+      <SectorFilter value={sector} onChange={onSector} />
       <KindFilter value={kind} onChange={setKind} />
       {routes.data && !routes.isPending ? (
         <AppText variant="caption" style={styles.count}>
@@ -88,7 +101,7 @@ export function RoutesScreen() {
         <View style={styles.list}>
           <FlashList
             data={pagination.pageItems}
-            extraData={`${kind}-${query}-${pagination.page}`}
+            extraData={`${kind}-${query}-${sector}-${pagination.page}`}
             keyExtractor={(item: Route) => item.id}
             refreshControl={
               <RefreshControl

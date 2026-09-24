@@ -1,4 +1,4 @@
-/** Libellé retard / avance à partir de delay_s (horloge service API) + conseil régulation. */
+/** Libellé retard / avance prévisionnel (delay_s API = now+trajet vs horaire) + conseil régulation. */
 export function delayLabel(delayS: number): string {
   const abs = Math.abs(delayS);
   if (!Number.isFinite(delayS) || abs < 60) {

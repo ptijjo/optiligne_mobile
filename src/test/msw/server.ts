@@ -15,6 +15,18 @@ function pathname(url: string): string {
   }
 }
 
+function urlMatches(pattern: string, url: string): boolean {
+  if (pattern === url) {
+    return true;
+  }
+  const pp = pattern.split('/');
+  const uu = url.split('/');
+  if (pp.length !== uu.length) {
+    return false;
+  }
+  return pp.every((part, i) => part.startsWith(':') || part === uu[i]);
+}
+
 export const http = {
   get: (url: string, handler: TestHandler): TestRoute => ({
     method: 'GET',
@@ -23,6 +35,11 @@ export const http = {
   }),
   post: (url: string, handler: TestHandler): TestRoute => ({
     method: 'POST',
+    url: pathname(url),
+    handler,
+  }),
+  delete: (url: string, handler: TestHandler): TestRoute => ({
+    method: 'DELETE',
     url: pathname(url),
     handler,
   }),
@@ -47,7 +64,9 @@ export const server = {
       const request = input instanceof Request && !init ? input : new Request(input, init);
       const url = pathname(request.url);
       const method = request.method.toUpperCase();
-      const match = [...routes].reverse().find((route) => route.method === method && route.url === url);
+      const match = [...routes]
+        .reverse()
+        .find((route) => route.method === method && urlMatches(route.url, url));
       if (!match) {
         throw new Error(`Unhandled request: ${method} ${request.url}`);
       }

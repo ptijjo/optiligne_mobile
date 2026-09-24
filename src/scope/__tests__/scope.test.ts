@@ -9,11 +9,12 @@ describe('scope', () => {
     });
   });
 
-  it('catalogQuery aligne operator_code / depot_code API', () => {
+  it('catalogQuery aligne operator_code / secteur API', () => {
     expect(catalogQuery()).toEqual({
       operator_code: 'transavold',
-      depot_code: 'fluo57',
-      depot_id: 'fluo57',
+      depot_code: 'rge',
+      depot_id: 'rge',
+      sector: 'rge',
     });
   });
 

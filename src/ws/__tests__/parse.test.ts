@@ -17,8 +17,22 @@ describe('contrat WS guidance', () => {
       offset_m: 12.5,
       next_stop: 'CREHANGE',
       delay_s: -90,
+      travel_s: 0,
       state: 'on_route',
     });
+  });
+
+  it('parse travel_s ETA trajet', () => {
+    const raw = JSON.stringify({
+      type: 'guidance',
+      frac: 0,
+      offset_m: 200,
+      next_stop: 'Forbach',
+      delay_s: 300,
+      travel_s: 720,
+      state: 'off_route',
+    });
+    expect(parseGuidanceMessage(raw)).toMatchObject({ travel_s: 720, delay_s: 300 });
   });
 
   it('payload invalide → null, pas de throw', () => {

@@ -8,4 +8,6 @@ export const api = {
     send(path, schema, { ...options, method: 'GET' }),
   post: <T>(path: string, body: unknown, schema: z.ZodType<T>, options?: RequestOptions) =>
     send(path, schema, { ...options, method: 'POST', body }),
+  delete: <T>(path: string, schema: z.ZodType<T>, options?: RequestOptions) =>
+    send(path, schema, { ...options, method: 'DELETE' }),
 };
