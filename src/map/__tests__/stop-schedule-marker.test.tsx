@@ -6,6 +6,7 @@ describe('StopScheduleMarker', () => {
     const view = render(
       <StopScheduleMarker name="Forbach" arrivalSec={26100} isNext />,
     );
+    expect(view.getByText('Forbach')).toBeTruthy();
     expect(view.getByText('07:15')).toBeTruthy();
     expect(view.getByLabelText('Arrêt Forbach 07:15 prochain')).toBeTruthy();
   });

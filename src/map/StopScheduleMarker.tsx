@@ -9,7 +9,7 @@ type StopScheduleMarkerProps = {
   isNext: boolean;
 };
 
-/** Pastille arrêt + horaire GTFS (pas de calcul de retard local). */
+/** Pastille arrêt + nom + horaire GTFS (pas de calcul de retard local). */
 export function StopScheduleMarker({ name, arrivalSec, isNext }: StopScheduleMarkerProps) {
   const time = formatDeparture(arrivalSec);
   return (
@@ -18,11 +18,13 @@ export function StopScheduleMarker({ name, arrivalSec, isNext }: StopScheduleMar
       style={[styles.wrap, isNext ? styles.next : null]}
       accessibilityLabel={`Arrêt ${name} ${time}${isNext ? ' prochain' : ''}`}
     >
+      <View style={[styles.bubble, isNext ? styles.bubbleNext : null]}>
+        <AppText numberOfLines={2} style={[styles.name, isNext ? styles.nameNext : null]}>
+          {name}
+        </AppText>
+        <AppText style={[styles.time, isNext ? styles.timeNext : null]}>{time}</AppText>
+      </View>
       <View style={[styles.dot, isNext ? styles.dotNext : null]} />
-      <AppText style={[styles.time, isNext ? styles.timeNext : null]}>{time}</AppText>
-      <AppText numberOfLines={1} style={[styles.name, isNext ? styles.nameNext : null]}>
-        {name}
-      </AppText>
     </View>
   );
 }
@@ -30,11 +32,24 @@ export function StopScheduleMarker({ name, arrivalSec, isNext }: StopScheduleMar
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    maxWidth: 120,
-    gap: 2,
+    maxWidth: 148,
   },
   next: {
-    maxWidth: 140,
+    maxWidth: 168,
+  },
+  bubble: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: colors.brand,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    gap: 2,
+    marginBottom: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  bubbleNext: {
+    borderWidth: 2.5,
   },
   dot: {
     width: 12,
@@ -51,30 +66,28 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: colors.brand,
   },
-  time: {
+  name: {
     fontFamily: fonts.bold,
     fontSize: 11,
     lineHeight: 14,
     color: colors.slate,
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.xs,
-    overflow: 'hidden',
-  },
-  timeNext: {
-    fontSize: 13,
-    lineHeight: 16,
-    color: colors.brand,
-  },
-  name: {
-    fontFamily: fonts.medium,
-    fontSize: 10,
-    lineHeight: 12,
-    color: colors.muted,
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.xs,
+    textAlign: 'center',
   },
   nameNext: {
+    fontSize: 12,
+    lineHeight: 15,
+    color: colors.brand,
+  },
+  time: {
+    fontFamily: fonts.medium,
     fontSize: 11,
-    color: colors.slate,
+    lineHeight: 14,
+    color: colors.muted,
+    textAlign: 'center',
+  },
+  timeNext: {
+    fontSize: 12,
+    lineHeight: 15,
+    color: colors.brand,
   },
 });

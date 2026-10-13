@@ -47,6 +47,8 @@ export function GuidanceMap({
 }: GuidanceMapProps) {
   const mapRef = useRef<MapView>(null);
   const [trackBus, setTrackBus] = useState(true);
+  // Android : Marker enfants custom restent blancs si tracksViewChanges=false dès le montage.
+  const [trackStops, setTrackStops] = useState(true);
   const coords = (session.shape?.coordinates ?? []).filter(
     (c) => Number.isFinite(c[0]) && Number.isFinite(c[1]),
   );
@@ -96,6 +98,13 @@ export function GuidanceMap({
     return () => clearTimeout(timer);
   }, [state, heading, arrowAt.latitude, arrowAt.longitude, nextStop]);
 
+  useEffect(() => {
+    setTrackStops(true);
+    // Laisser assez de temps pour rasteriser pastille + nom + horaire (plusieurs Markers).
+    const timer = setTimeout(() => setTrackStops(false), 1800);
+    return () => clearTimeout(timer);
+  }, [stops, nextStop]);
+
   return (
     <View testID="guidance-map" style={styles.fill}>
       <MapView
@@ -129,9 +138,9 @@ export function GuidanceMap({
             <Fragment key={`${stop.sequence}-${stop.name}-${stop.lon}-${stop.lat}-${index}`}>
               <Marker
                 coordinate={center}
-                anchor={{ x: 0.5, y: 0.5 }}
+                anchor={{ x: 0.5, y: 1 }}
                 zIndex={isNext ? 5 : 3}
-                tracksViewChanges={false}
+                tracksViewChanges={trackStops}
               >
                 <StopScheduleMarker
                   name={stop.name}
